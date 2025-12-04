@@ -55,3 +55,6 @@ Columns include:
 ## How to Run
 Open the R Markdown file (`Superstore_Analysis.Rmd`) in RStudio and knit to HTML to view the full report with code, outputs, and plots.
 
+## Visualizations
+All project visualizations are included in the compressed file: [visualizations.zip](visualizations.zip)
+
