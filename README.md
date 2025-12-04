@@ -7,7 +7,20 @@
 A full analysis of the Sample Superstore dataset including data cleaning, KPI calculation, exploratory data analysis, and visualizations to provide actionable business insights.
 
 ## Dataset
-**Dataset:** Sample Superstore (CSV file included)
+
+**File:** Sample_Superstore.csv  
+
+**Description:** This dataset contains sales records from a sample superstore.  
+Columns include:
+- Order ID, Customer ID, Product ID
+- Order Date, Ship Date, Ship Mode
+- Customer and Product details (Name, Category, Sub-Category)
+- Sales, Quantity, Discount, Profit
+
+**Notes:**  
+- Dates are in MM/DD/YYYY format.  
+- Profit ratio is calculated in the analysis.  
+- Some orders may have very high sales or negative profit (returns or discounts).
 
 ## Tools & Libraries
 - R  
