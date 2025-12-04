@@ -1,0 +1,241 @@
+---
+title: "<span style='color:#0B4F0B'>Superstore Sales Analysis</span>"
+author: "Rahma"
+date: "2025-12-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(scales)
+library(ggcorrplot)
+library(readr)
+
+```
+**1.Introduction**  
+
+*This report presents a full analysis of the Sample Superstore dataset.*  
+
+*Goal:*  
+*Clean the data, calculate KPIs, perform exploratory data analysis,visualize* *trends,and draw actionable insights.*  
+
+**2.Data Cleaning**  
+
+*The dataset contains sales records from a superstore.*  
+*We will :*  
+*-Convert dates to Date format*  
+
+*-Add Year and Month columns*  
+
+*-Check missing values and duplicates*  
+
+*-Calculate profit margin*  
+
+
+```{r}
+data <- read.csv("Sample - Superstore.csv")
+
+cleaned_data <- data %>% mutate(
+Order.Date = as_date(Order.Date, format = "%m/%d/%Y"),
+Ship.Date  = as_date(Ship.Date, format = "%m/%d/%Y"),
+Year  = year(Order.Date),
+Month = month(Order.Date, label = TRUE),
+Profit_Ratio = round(Profit / Sales, 2)
+)
+```
+**Missing values**  
+
+```{r}
+colSums(is.na(cleaned_data))
+```
+**Duplicates**  
+
+```{r}
+anyDuplicated(cleaned_data)
+```
+**3.KPIs**  
+
+*We calculate the main Key Performance Indicators (KPIs) for the superstore.*
+```{r}
+sales_total  <- sum(cleaned_data$Sales)
+profit_total <- sum(cleaned_data$Profit)
+profit_margin <- round((profit_total / sales_total) * 100, 2)
+
+KPI <- data.frame(
+Total_Sales   = paste0(label_comma()(sales_total), "$"),
+Total_Profit  = paste0(label_comma()(profit_total), "$"),
+Profit_Margin = paste0(profit_margin, "%")
+)
+KPI  
+
+```  
+
+**Insights**  
+
+*Total Sales and Profit give an overview of business performance*  
+
+*Profit Margin indicates efficiency in generating profit from sales*  
+
+**4.Exploratory Analysis**  
+
+```{r}
+summary(cleaned_data$Sales)
+summary(cleaned_data$Profit)
+table(cleaned_data$Region)
+table(cleaned_data$Category)
+```  
+
+**Observations:**  
+
+*Some regions and categories outperform others*  
+
+*Distribution of Sales and Profit is skewed → few high-value orders*  
+
+**5.Visualizations**  
+
+**5.1 Sales by Category**  
+
+```{r}
+category_summary <- cleaned_data %>%
+group_by(Category) %>%
+summarise(Total_Sales = sum(Sales))
+category_summary
+
+ggplot(category_summary, aes(x = reorder(Category, -Total_Sales), y = Total_Sales)) +
+geom_bar(stat="identity", fill="#600D07") +
+geom_text(aes(label = label_comma()(Total_Sales)), vjust=-0.4, color="#3C3C4C", size=3) +
+theme_minimal() +
+ggtitle("Sales by Category") +
+xlab("Category") + ylab("Total Sales")
+```  
+
+**Insights:**  
+
+*-Technology products generate the highest sales*  
+*-Furniture has moderate sales*  
+*-Office Supplies is the lowest*  
+*-Suggest focusing marketing on Technology products*  
+
+**5.2 Sales by Region**  
+
+```{r}
+region_summary <- cleaned_data %>%
+group_by(Region) %>%
+summarise(Total_Sales = sum(Sales))
+region_summary
+
+ggplot(region_summary, aes(x = reorder(Region, -Total_Sales), y = Total_Sales)) +
+geom_bar(stat="identity", fill="#0B4F0B") +
+geom_text(aes(label = label_comma()(Total_Sales)), vjust=-0.4, color="#3C3C4C", size=3) +
+theme_minimal() +
+ggtitle("Sales by Region") +
+xlab("Region") + ylab("Total Sales")
+```  
+
+*Insights:*  
+*-West region leads in total sales*  
+*-East and South have lower sales*  
+*-Suggest focusing expansion efforts in top regions*  
+
+
+**5.3 Sales per Month**  
+
+```{r}
+Month_summary <- cleaned_data %>%
+group_by(Month) %>%
+summarise(Total_Sales = sum(Sales))
+
+ggplot(Month_summary, aes(x = Month, y = Total_Sales, group = 1)) +
+  geom_line(color = "#0B4F0B", linewidth = 1.2) +
+  geom_point(color = "#600D07", size = 2) +  # use size instead of linewidth
+  geom_text(aes(label = label_comma()(Total_Sales)), vjust = -0.8, size = 3) +  # size instead of linewidth
+  theme_minimal() +
+  ggtitle("Sales per Month") +
+  xlab("Month") + ylab("Sales")
+```  
+
+**Insights:**  
+
+*Sales peak sharply in November (300,000) but drop lowest in June–July (~95,000),* *showing strong seasonality with pre-holiday surge and a mid-year slowdown.*
+
+**5.4 Correlation Heatmap**  
+
+```{r}
+corr_matrix <- cleaned_data %>%
+select(Sales, Profit, Discount, Quantity) %>%
+cor()
+
+suppressWarnings(
+  ggcorrplot(corr_matrix,
+             hc.order = TRUE,
+             type = "lower",
+             lab = TRUE,
+             lab_size = 4,
+             colors = c("#0B4F0B", "#F5F0E6", "#600D07"),
+             title = "Correlation Matrix",
+             ggtheme = theme_minimal())
+)
+
+```  
+
+**Insights:**  
+
+*Sales & Profit: strong positive correlation (0.48)*  
+
+*Discount & Profit: weak negative correlation (-0.22)*  
+
+*Quantity shows limited linear relationships*  
+
+**5.5 Profit vs Sales**  
+```{r}
+ggplot() +
+  geom_point(aes(x = 1:nrow(cleaned_data), y = cleaned_data$Sales), color = "#600D07", size = 3) +   # Sales points
+  geom_point(aes(x = 1:nrow(cleaned_data), y = cleaned_data$Profit), color = "#D0716D", size = 3) +  # Profit points
+  theme_minimal()+
+  xlab("Profit")+
+  ylab("Sales")+
+  theme_minimal()+
+  ggtitle("Sales vs profit")
+```  
+
+**Insights :**  
+*Higher sales usually mean higher profits, but some low-sales items have high margins.*  
+*This shows we could improve overall profit by adjusting the product mix.*  
+
+**5.6 Profit by Category – Boxplot**  
+
+```{r}
+cleaned_data$Category <- factor(cleaned_data$Category,
+levels=c("Furniture","Office Supplies","Technology"))
+
+ggplot(cleaned_data, aes(x=Category, y=Profit)) +
+geom_boxplot(fill="#D88A1A") +
+theme_minimal() +
+ggtitle("Profit by Category") +
+xlab("Category") + ylab("Profit")
+```  
+
+**Insights:**  
+
+*Technology is the most profitable category, while Office Supplies operates at a loss.This suggests a need to review pricing, costs, or sales focus for underperforming categories.*  
+
+**6.Insights & Recommendations**  
+
+*-Focus marketing and inventory on Technology products*  
+
+*-Reduce excessive discounts that slightly reduce profit*  
+
+*-Expand in high-performing regions like West*  
+
+*-Monitor peak sales months for promotions and stock planning*  
+
+**Conclusion **  
+*The analysis shows that Technology products and the West region drive the highest sales and profits, while other categories and regions lag behind. Sales peak in November and drop mid-year, revealing seasonal trends. Optimizing the product mix and discount strategies could further increase profitability. These insights can guide marketing, inventory, and expansion decisions to improve overall business performance.*
+ 
